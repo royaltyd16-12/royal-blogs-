@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Midnight Social</title>
+  <link rel="stylesheet" href="My page.css">
+</head>
+<body>
+    <header>
+<h1>🌙 Midnight Social Pro</h1>
+</header>
+
+<div class="container">
+
+<div class="card">
+<input type="text" id="username" placeholder="Your name">
+<input type="text" id="title" placeholder="What's on your mind?">
+<textarea id="content" placeholder="Say something..."></textarea>
+<input type="file" id="image">
+<button onclick="addPost()">Post</button>
+</div>
+
+<div id="posts"></div>
+
+</div>
+
+<script>
+let posts = JSON.parse(localStorage.getItem('posts')) || [];
+function savePosts() {
+  localStorage.setItem('posts', JSON.stringify(posts));
+}
+
+function renderPosts() {
+  const container = document.getElementById('posts');
+  container.innerHTML = '';
+
+  posts.slice().reverse().forEach((p, index) => {
+    const div = document.createElement('div');
+    div.className = 'card';
+
+    div.innerHTML = `
+      <h3>${p.title}</h3>
+      <div class="small">By ${p.username} • ${p.time}</div>
+      <p>${p.content}</p>
+      ${p.image ? `<img src="${p.image}" class="post-img">` : ''}
+      <div class="actions">
+        <div class="btn like">❤ ${p.likes}</div>
+        <div class="btn comment-toggle">💬 Comment</div>
+      </div>
+      <div class="comment-box" style="display:none;">
+        <input type="text" placeholder="Write a comment...">
+        <div class="comments"></div>
+          </div>
+    `;
+
+    const likeBtn = div.querySelector('.like');
+    likeBtn.onclick = () => {
+      p.likes++;
+      savePosts();
+      renderPosts();
+    };
+
+    const toggleBtn = div.querySelector('.comment-toggle');
+    const commentBox = div.querySelector('.comment-box');
+
+    toggleBtn.onclick = () => {
+      commentBox.style.display = commentBox.style.display === 'none' ? 'block' : 'block';
+    };
+
+    const input = commentBox.querySelector('input');
+    const commentsDiv = commentBox.querySelector('.comments');
+
+    p.comments.forEach(c => {
+      const cDiv = document.createElement('div');
+      cDiv.className = 'comment';
+      cDiv.textContent = c;
+      commentsDiv.appendChild(cDiv);
+    });
+
+    input.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter' && input.value.trim() !== '') {
+        p.comments.push(input.value);
+        savePosts();
+        renderPosts();
+      }
+    });
+
+    container.appendChild(div);
+  });
+}
+
+function addPost() {
+  const username = document.getElementById('username').value;
+  const title = document.getElementById('title').value;
+  const content = document.getElementById('content').value;
+  const imageInput = document.getElementById('image');
+
+  if (!username || !title || !content) return alert('Fill everything');
+
+  const file = imageInput.files[0];
+   const newPost = {
+    username,
+    title,
+    content,
+    image: '',
+    likes: 0,
+    comments: [],
+    time: new Date().toLocaleString()
+  };
+
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      newPost.image = e.target.result;
+      posts.push(newPost);
+      savePosts();
+      renderPosts();
+    };
+    reader.readAsDataURL(file);
+  } else {
+    posts.push(newPost);
+    savePosts();
+    renderPosts();
+  }
+    document.getElementById('username').value = '';
+  document.getElementById('title').value = '';
+  document.getElementById('content').value = '';
+  imageInput.value = '';
+}
+
+renderPosts();
+</script>
+</body>
+</html>
